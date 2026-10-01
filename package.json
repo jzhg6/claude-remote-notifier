@@ -1,0 +1,181 @@
+{
+  "name": "claude-remote-notifier",
+  "displayName": "Claude Remote Notifier",
+  "description": "Reliable native Windows notifications for Claude Code over VS Code Remote-SSH, using a port-free workspace event spool.",
+  "version": "0.2.0",
+  "publisher": "jzhg6",
+  "license": "MIT",
+  "homepage": "https://github.com/jzhg6/claude-remote-notifier#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jzhg6/claude-remote-notifier.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jzhg6/claude-remote-notifier/issues"
+  },
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.96.0",
+    "node": ">=22.22.2"
+  },
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude code",
+    "remote ssh",
+    "notification",
+    "windows",
+    "coding agent"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Only the local test command and read-only diagnostics are available. Remote hooks and event consumption require Workspace Trust."
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeRemoteNotifier.setup",
+        "title": "Claude Remote Notifier: Set Up Current Workspace",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeRemoteNotifier.verify",
+        "title": "Claude Remote Notifier: Verify Setup",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeRemoteNotifier.uninstall",
+        "title": "Claude Remote Notifier: Remove From Current Workspace",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeRemoteNotifier.testLocal",
+        "title": "Claude Remote Notifier: Test Windows Notification"
+      },
+      {
+        "command": "claudeRemoteNotifier.testBridge",
+        "title": "Claude Remote Notifier: Test Remote Bridge",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "claudeRemoteNotifier.diagnose",
+        "title": "Claude Remote Notifier: Diagnose"
+      },
+      {
+        "command": "claudeRemoteNotifier.cleanSpool",
+        "title": "Claude Remote Notifier: Clean Event Spool",
+        "enablement": "isWorkspaceTrusted"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Remote Notifier",
+      "properties": {
+        "claudeRemoteNotifier.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Consume remote Claude Code event records."
+        },
+        "claudeRemoteNotifier.notifyWhenFocused": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show completion notifications even while a related VS Code window is focused. Permission, question, and failure notifications always appear."
+        },
+        "claudeRemoteNotifier.notifyOnStop": {
+          "type": "boolean",
+          "default": true,
+          "description": "Notify when the main Claude Code turn stops."
+        },
+        "claudeRemoteNotifier.notifyOnStopFailure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Notify when Claude Code stops because of an API error."
+        },
+        "claudeRemoteNotifier.notifyOnPermission": {
+          "type": "boolean",
+          "default": true,
+          "description": "Notify when Claude Code needs permission."
+        },
+        "claudeRemoteNotifier.notifyOnQuestion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Notify when Claude Code asks a question."
+        },
+        "claudeRemoteNotifier.notifyOnSubagentStop": {
+          "type": "boolean",
+          "default": false,
+          "description": "Install and enable SubagentStop notifications. Run Setup again after changing this setting."
+        },
+        "claudeRemoteNotifier.pollIntervalMs": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Fallback polling interval. File-system watchers provide the low-latency path."
+        },
+        "claudeRemoteNotifier.maxEventAgeMs": {
+          "type": "number",
+          "default": 600000,
+          "minimum": 10000,
+          "maximum": 86400000,
+          "description": "Discard event records older than this duration."
+        }
+      }
+    }
+  },
+  "files": [
+    "dist/**",
+    "resources/hook/event-bridge.cjs",
+    "media/icon.png",
+    "README.md",
+    "README_CN.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run check:secrets && npm run build",
+    "package": "npm run check && vsce package --no-dependencies",
+    "package:ls": "vsce ls --no-dependencies",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "audit:package": "node scripts/audit-package.mjs",
+    "release:build": "npm run package && npm run audit:package"
+  },
+  "dependencies": {
+    "jsonc-parser": "3.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.36.0",
+    "@types/node": "22.18.6",
+    "@types/vscode": "1.96.0",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vscode/vsce": "3.6.0",
+    "esbuild": "0.28.2",
+    "eslint": "9.36.0",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.44.1",
+    "vitest": "4.1.11",
+    "adm-zip": "0.6.1"
+  },
+  "packageManager": "npm@12.2.0"
+}

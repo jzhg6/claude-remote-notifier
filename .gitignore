@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+*.vsix
+*.vsix.sha256
+*.log
+.DS_Store

@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npx --yes npm@12.2.0 ci
+      - run: npx --yes npm@12.2.0 audit --audit-level=high
+      - run: npm run check
+      - run: npm run package
+      - run: npm run audit:package
+      - if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-remote-notifier-vsix
+          path: claude-remote-notifier-*.vsix
+          if-no-files-found: error

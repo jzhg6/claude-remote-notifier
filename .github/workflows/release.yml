@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npx --yes npm@12.2.0 ci
+      - run: npx --yes npm@12.2.0 audit --audit-level=high
+      - name: Verify tag and package version
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          test "v${version}" = "${GITHUB_REF_NAME}"
+      - run: npm run release:build
+      - name: Create checksum
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          file="claude-remote-notifier-${version}.vsix"
+          sha256sum "$file" > "$file.sha256"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          file="claude-remote-notifier-${version}.vsix"
+          gh release create "$GITHUB_REF_NAME" "$file" "$file.sha256" \
+            --title "Claude Remote Notifier ${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --verify-tag
