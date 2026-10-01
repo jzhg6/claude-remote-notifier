@@ -31,14 +31,19 @@ jobs:
           version="$(node -p "require('./package.json').version")"
           file="claude-remote-notifier-${version}.vsix"
           sha256sum "$file" > "$file.sha256"
-      - name: Create GitHub Release
+      - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           version="$(node -p "require('./package.json').version")"
           file="claude-remote-notifier-${version}.vsix"
-          gh release create "$GITHUB_REF_NAME" "$file" "$file.sha256" \
-            --title "Claude Remote Notifier ${GITHUB_REF_NAME}" \
-            --generate-notes \
-            --verify-tag
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            # Idempotent for re-runs and for tag updates that retrigger this workflow.
+            gh release upload "$GITHUB_REF_NAME" "$file" "$file.sha256" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$file" "$file.sha256" \
+              --title "Claude Remote Notifier ${GITHUB_REF_NAME}" \
+              --generate-notes \
+              --verify-tag
+          fi
