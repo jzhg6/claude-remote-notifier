@@ -76,13 +76,14 @@ async function writeEvent(
   pendingDir: vscode.Uri,
   installationId: string,
   kind: BridgeEvent["kind"],
+  ageMs = 0,
 ): Promise<void> {
   const event: BridgeEvent = {
     schemaVersion: 2,
     installationId,
     eventId: randomUUID(),
     kind,
-    createdAt: Date.now(),
+    createdAt: Date.now() - ageMs,
     sessionHash: "0123456789abcdef",
   };
   const name = `${event.createdAt}-${kind}-${event.eventId}.json`;
@@ -272,6 +273,29 @@ describe("spool consumer", () => {
     expect(await vscode.workspace.fs.readDirectory(uris.ackDir)).toHaveLength(
       0,
     );
+    consumer.dispose();
+  });
+  it("acknowledges and removes an expired event instead of retrying it", async () => {
+    const { uris, installationId, notifications, consumer } = await fixture();
+    await writeEvent(
+      uris.pendingDir,
+      installationId,
+      "permission",
+      60 * 60 * 1000,
+    );
+    await consumer.start();
+    expect(notifications).toHaveLength(0);
+    expect(
+      await vscode.workspace.fs.readDirectory(uris.pendingDir),
+    ).toHaveLength(0);
+    expect(
+      await vscode.workspace.fs.readDirectory(uris.inflightDir),
+    ).toHaveLength(0);
+    const acks = await vscode.workspace.fs.readDirectory(uris.ackDir);
+    expect(acks).toHaveLength(1);
+    expect(
+      await mock.__readText(vscode.Uri.joinPath(uris.ackDir, acks[0]![0])),
+    ).toContain('"status":"expired"');
     consumer.dispose();
   });
 });
